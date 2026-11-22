@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Google TV Screensaver</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+    #player { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+    #player iframe { width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <script>
+    const videoId = 'kQ0LWl1o3oo';
+    let player;
+    function disableCaptions() {
+      if (!player || typeof player.unloadModule !== 'function') return;
+      try { player.unloadModule('captions'); } catch (e) { /* Player may not expose captions. */ }
+    }
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        videoId,
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          controls: 0,
+          loop: 1,
+          playlist: videoId,
+          playsinline: 1,
+          rel: 0,
+          cc_load_policy: 0,
+          enablejsapi: 1
+        },
+        events: {
+          onReady(event) {
+            event.target.mute();
+            event.target.playVideo();
+            disableCaptions();
+          },
+          onStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) disableCaptions();
+            if (event.data === YT.PlayerState.ENDED) event.target.playVideo();
+          },
+          onApiChange: disableCaptions
+        }
+      });
+    }
+  </script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
