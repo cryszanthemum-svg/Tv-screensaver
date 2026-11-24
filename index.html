@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Google TV Screensaver</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+    #player { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+    #player iframe { width: 100%; height: 100%; border: 0; }
+    #clock {
+      position: fixed;
+      bottom: 4vh;
+      left: 4vw;
+      z-index: 10;
+      color: #fff;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      font-size: 8vh;
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 8px rgba(0,0,0,.65);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #clock-period { font-size: .38em; margin-left: .35em; }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <div id="clock"><span id="clock-time"></span><span id="clock-period"></span></div>
+  <script>
+    const clockFormatter = new Intl.DateTimeFormat('en-AU', {
+      timeZone: 'Australia/Adelaide',
+      hour: 'numeric', minute: '2-digit', hour12: true
+    });
+    function updateClock() {
+      const parts = clockFormatter.formatToParts(new Date());
+      const get = type => parts.find(part => part.type === type).value;
+      document.getElementById('clock-time').textContent = get('hour') + ':' + get('minute');
+      document.getElementById('clock-period').textContent = get('dayPeriod').toUpperCase();
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+  <script>
+    const videoId = 'kQ0LWl1o3oo';
+    let player;
+    function disableCaptions() {
+      if (!player || typeof player.unloadModule !== 'function') return;
+      for (const moduleName of ['captions', 'cc']) {
+        try { player.unloadModule(moduleName); } catch (e) { /* Unsupported by this player. */ }
+      }
+    }
+    // TV WebViews may restore captions after the player starts.
+    // Reapply the request periodically; YouTube may still override it.
+    setInterval(disableCaptions, 2000);
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        videoId,
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          controls: 0,
+          loop: 1,
+          playlist: videoId,
+          playsinline: 1,
+          rel: 0,
+          cc_load_policy: 0,
+          enablejsapi: 1
+        },
+        events: {
+          onReady(event) {
+            event.target.mute();
+            event.target.playVideo();
+            disableCaptions();
+          },
+          onStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) disableCaptions();
+            if (event.data === YT.PlayerState.ENDED) event.target.playVideo();
+          },
+          onApiChange: disableCaptions
+        }
+      });
+    }
+  </script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
